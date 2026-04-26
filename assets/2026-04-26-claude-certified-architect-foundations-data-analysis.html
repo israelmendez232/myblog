@@ -1,0 +1,648 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Claude Architect — Practice Exam Analysis</title>
+<style>
+  :root {
+    --bg: #fafaf7;
+    --surface: #ffffff;
+    --surface-2: #f3f2ed;
+    --ink: #1a1a1a;
+    --ink-2: #5a5a55;
+    --ink-3: #888880;
+    --line: rgba(0,0,0,0.08);
+    --line-2: rgba(0,0,0,0.16);
+    --accent: #c8553d;
+    --good: #1d9e75;
+    --warn: #ba7517;
+    --bad: #a32d2d;
+    --info: #185fa5;
+    --serif: Georgia, "Times New Roman", serif;
+    --sans: -apple-system, BlinkMacSystemFont, "Helvetica Neue", Arial, sans-serif;
+    --mono: "SF Mono", Menlo, Consolas, monospace;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; }
+  body {
+    background: var(--bg);
+    color: var(--ink);
+    font-family: var(--sans);
+    font-size: 15px;
+    line-height: 1.6;
+    -webkit-font-smoothing: antialiased;
+  }
+  .wrap { max-width: 1080px; margin: 0 auto; padding: 56px 32px 80px; }
+
+  /* HEADER */
+  header { border-bottom: 1px solid var(--line); padding-bottom: 28px; margin-bottom: 40px; }
+  .eyebrow { font-size: 11px; letter-spacing: 0.18em; text-transform: uppercase; color: var(--ink-3); margin: 0 0 12px; font-weight: 500; }
+  h1 { font-family: var(--serif); font-weight: 400; font-size: 38px; line-height: 1.15; margin: 0 0 8px; letter-spacing: -0.01em; }
+  .sub { color: var(--ink-2); font-size: 15px; margin: 0; }
+
+  /* SECTION */
+  section { margin: 56px 0 0; }
+  h2 { font-family: var(--serif); font-weight: 400; font-size: 24px; margin: 0 0 4px; letter-spacing: -0.005em; }
+  .section-meta { font-size: 12px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--ink-3); margin: 0 0 24px; font-weight: 500; }
+  h3 { font-size: 14px; font-weight: 500; margin: 0 0 12px; color: var(--ink); letter-spacing: 0.02em; }
+
+  /* VERDICT BANNER */
+  .verdict {
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-left: 3px solid var(--good);
+    padding: 24px 28px;
+    display: grid;
+    grid-template-columns: auto 1fr;
+    gap: 28px;
+    align-items: center;
+  }
+  .verdict-num { font-family: var(--serif); font-size: 56px; line-height: 1; font-weight: 400; color: var(--good); }
+  .verdict-num small { font-size: 18px; color: var(--ink-3); margin-left: 4px; }
+  .verdict-label { font-size: 11px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--ink-3); margin-bottom: 6px; }
+  .verdict p { margin: 0; font-size: 14px; line-height: 1.55; }
+
+  /* METRIC CARDS */
+  .metrics { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; }
+  .metric { background: var(--surface); border: 1px solid var(--line); padding: 18px 20px; }
+  .metric .label { font-size: 11px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--ink-3); margin-bottom: 8px; font-weight: 500; }
+  .metric .value { font-family: var(--serif); font-size: 30px; line-height: 1; font-weight: 400; color: var(--ink); }
+  .metric .delta { font-size: 12px; color: var(--ink-2); margin-top: 6px; }
+  .metric .delta.up { color: var(--good); }
+  .metric .delta.down { color: var(--bad); }
+
+  /* CHART CARDS */
+  .chart-card { background: var(--surface); border: 1px solid var(--line); padding: 24px 28px; }
+  .chart-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+
+  /* TABLE */
+  table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  th, td { text-align: left; padding: 10px 12px; border-bottom: 1px solid var(--line); }
+  th { font-size: 11px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--ink-3); font-weight: 500; }
+  td.num { font-family: var(--mono); font-variant-numeric: tabular-nums; }
+  td.num.bad { color: var(--bad); font-weight: 500; }
+  td.num.warn { color: var(--warn); }
+  td.num.good { color: var(--good); }
+
+  /* DOMAIN BARS */
+  .dom-list { display: flex; flex-direction: column; gap: 18px; }
+  .dom-row { }
+  .dom-row .head { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 6px; }
+  .dom-row .name { font-weight: 500; font-size: 14px; }
+  .dom-row .weight { color: var(--ink-3); font-size: 12px; margin-left: 8px; }
+  .dom-row .score { font-family: var(--mono); font-variant-numeric: tabular-nums; font-size: 13px; color: var(--ink-2); }
+  .bar-track { height: 8px; background: var(--surface-2); position: relative; }
+  .bar-fill { height: 100%; background: var(--ink-2); }
+  .bar-fill.good { background: var(--good); }
+  .bar-fill.warn { background: var(--warn); }
+  .bar-fill.bad { background: var(--bad); }
+  .bar-target { position: absolute; top: -3px; bottom: -3px; width: 1px; background: var(--ink); }
+  .bar-target::after { content: '72%'; position: absolute; top: -16px; left: -10px; font-size: 10px; color: var(--ink-3); font-family: var(--mono); }
+
+  /* INSIGHT CARDS */
+  .insight {
+    background: var(--surface);
+    border: 1px solid var(--line);
+    padding: 22px 26px;
+    margin-bottom: 12px;
+    border-left: 3px solid var(--ink-3);
+  }
+  .insight.crit { border-left-color: var(--bad); }
+  .insight.warn { border-left-color: var(--warn); }
+  .insight.good { border-left-color: var(--good); }
+  .insight h4 { margin: 0 0 8px; font-size: 15px; font-weight: 500; display: flex; align-items: center; gap: 10px; }
+  .insight .tag { font-size: 10px; letter-spacing: 0.12em; text-transform: uppercase; padding: 3px 8px; border-radius: 2px; font-weight: 500; }
+  .tag.crit { background: rgba(163,45,45,0.08); color: var(--bad); }
+  .tag.warn { background: rgba(186,117,23,0.1); color: var(--warn); }
+  .tag.good { background: rgba(29,158,117,0.1); color: var(--good); }
+  .insight p { margin: 0 0 10px; font-size: 14px; color: var(--ink-2); line-height: 1.6; }
+  .insight ul { margin: 8px 0 0; padding-left: 20px; font-size: 14px; color: var(--ink-2); }
+  .insight ul li { margin-bottom: 4px; }
+  .insight code { font-family: var(--mono); font-size: 12.5px; background: var(--surface-2); padding: 1px 6px; border-radius: 2px; color: var(--ink); }
+
+  /* PLAN */
+  .plan-week { background: var(--surface); border: 1px solid var(--line); padding: 20px 24px; margin-bottom: 10px; }
+  .plan-week h4 { margin: 0 0 4px; font-size: 14px; font-weight: 500; }
+  .plan-week .when { font-size: 11px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--ink-3); margin-bottom: 10px; font-weight: 500; }
+  .plan-week ul { margin: 0; padding-left: 18px; font-size: 13.5px; color: var(--ink-2); }
+  .plan-week li { margin-bottom: 4px; }
+
+  /* PRIORITY PILLS */
+  .prio { font-size: 10px; letter-spacing: 0.12em; text-transform: uppercase; padding: 4px 10px; border-radius: 2px; font-weight: 500; display: inline-block; }
+  .prio.crit { background: rgba(163,45,45,0.1); color: var(--bad); }
+  .prio.high { background: rgba(186,117,23,0.12); color: var(--warn); }
+  .prio.med  { background: rgba(24,95,165,0.1); color: var(--info); }
+  .prio.low  { background: var(--surface-2); color: var(--ink-2); }
+
+  /* FOOTER */
+  footer { margin-top: 64px; padding-top: 24px; border-top: 1px solid var(--line); font-size: 12px; color: var(--ink-3); }
+
+  /* CHART CONTAINERS */
+  .chart-h-220 { position: relative; height: 220px; width: 100%; }
+  .chart-h-300 { position: relative; height: 300px; width: 100%; }
+
+  @media (max-width: 720px) {
+    .wrap { padding: 32px 20px 60px; }
+    h1 { font-size: 28px; }
+    .verdict { grid-template-columns: 1fr; gap: 12px; }
+    .metrics { grid-template-columns: repeat(2, 1fr); }
+    .chart-grid { grid-template-columns: 1fr; }
+    .verdict-num { font-size: 44px; }
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header>
+    <p class="eyebrow">Claude Certified Architect — Foundations</p>
+    <h1>Practice Exam Analysis</h1>
+    <p class="sub">Seven attempts · 21 – 26 April 2026 · pass threshold 720 / 1000</p>
+  </header>
+
+  <!-- VERDICT -->
+  <section style="margin-top: 0;">
+    <div class="verdict" id="verdict">
+      <div>
+        <div class="verdict-label">Projected scaled score</div>
+        <div class="verdict-num">796<small>/ 1000</small></div>
+      </div>
+      <div>
+        <div class="verdict-label" style="margin-bottom: 6px;">Status</div>
+        <p><strong style="color: var(--good); font-weight: 500;">Still on track to pass — but margin is narrowing.</strong> Weighted average across seven attempts projects to ≈796/1000 against the 720 minimum, down from ≈809 at six attempts. The 26 Apr Sundog run exposed a weakness in <strong style="font-weight: 500;">Domain 3 (Claude Code Config)</strong> that earlier Tutorialdojo attempts had been hiding. <strong style="font-weight: 500;">Domain 4 (Prompt Engineering)</strong> remains your single biggest leak. Pass cushion is ~76 points — comfortable, but no longer generous.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- HEADLINE METRICS -->
+  <section>
+    <h2>At a glance</h2>
+    <p class="section-meta">Headline numbers</p>
+    <div class="metrics">
+      <div class="metric">
+        <div class="label">Mean grade</div>
+        <div class="value">76.9%</div>
+        <div class="delta">Across 7 attempts</div>
+      </div>
+      <div class="metric">
+        <div class="label">Last 3 mean</div>
+        <div class="value">77.2%</div>
+        <div class="delta down">↓ from 81.7% at 6 attempts</div>
+      </div>
+      <div class="metric">
+        <div class="label">Best attempt</div>
+        <div class="value">85.0%</div>
+        <div class="delta">22 &amp; 23 Apr</div>
+      </div>
+      <div class="metric">
+        <div class="label">Volatility</div>
+        <div class="value">±7.8</div>
+        <div class="delta">Std. dev., grade %</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- TREND -->
+  <section>
+    <h2>Score trajectory</h2>
+    <p class="section-meta">Grade % per attempt, in chronological order</p>
+    <div class="chart-card">
+      <div class="chart-h-300">
+        <canvas id="trendChart" role="img" aria-label="Line chart showing exam grade percentage across six attempts, trending upward from 65% to 83%, with the 72% pass threshold marked.">Grade trend: 65, 71.7, 85, 85, 76.7, 83.3 across six attempts.</canvas>
+      </div>
+    </div>
+  </section>
+
+  <!-- DOMAIN -->
+  <section>
+    <h2>Performance by domain</h2>
+    <p class="section-meta">Average score across attempts where the domain was reported · vertical bar = 72% pass line</p>
+    <div class="chart-card">
+      <div class="dom-list" id="domainBars"></div>
+    </div>
+  </section>
+
+  <!-- DOMAIN COMPARE -->
+  <section>
+    <h2>Domain coverage by attempt</h2>
+    <p class="section-meta">All five domains, all six attempts · empty cells = not reported by source</p>
+    <div class="chart-card">
+      <div class="chart-h-300">
+        <canvas id="heatChart" role="img" aria-label="Grouped bar chart comparing each domain's score across the six practice attempts.">Domain scores per attempt comparison.</canvas>
+      </div>
+    </div>
+  </section>
+
+  <!-- RAW TABLE -->
+  <section>
+    <h2>Attempt log</h2>
+    <p class="section-meta">Full numbers, sorted oldest to newest</p>
+    <div class="chart-card" style="padding: 8px 16px;">
+      <table>
+        <thead>
+          <tr>
+            <th>Date</th>
+            <th>Source</th>
+            <th style="text-align:right;">Grade</th>
+            <th style="text-align:right;">D1 · 27%</th>
+            <th style="text-align:right;">D2 · 18%</th>
+            <th style="text-align:right;">D3 · 20%</th>
+            <th style="text-align:right;">D4 · 20%</th>
+            <th style="text-align:right;">D5 · 15%</th>
+          </tr>
+        </thead>
+        <tbody id="attemptTable"></tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- POINT LOSS -->
+  <section>
+    <h2>Where points are leaking</h2>
+    <p class="section-meta">Expected lost points = (100 − domain avg) × domain weight · the bigger the bar, the more this domain costs you</p>
+    <div class="chart-card">
+      <div class="chart-h-220">
+        <canvas id="lossChart" role="img" aria-label="Horizontal bar chart of expected point loss per domain. Prompt Engineering loses the most at 6.4 points, Agentic Architecture 5.5, Tool Design 3.9, Claude Code Config 3.5, and Context Management 2.0.">Point loss per domain.</canvas>
+      </div>
+    </div>
+  </section>
+
+  <!-- BY SOURCE -->
+  <section>
+    <h2>Performance by source</h2>
+    <p class="section-meta">Each source has different question style and difficulty calibration · domain coverage also varies</p>
+    <div class="chart-card">
+      <div class="chart-h-300">
+        <canvas id="sourceChart" role="img" aria-label="Grouped bar chart showing average domain scores by practice exam source: CertSafari, Tutorialdojo, and Sundog.">Domain averages per source.</canvas>
+      </div>
+    </div>
+    <div class="chart-card" style="padding: 8px 16px; margin-top: 12px;">
+      <table>
+        <thead>
+          <tr>
+            <th>Source</th>
+            <th style="text-align:right;">Runs</th>
+            <th style="text-align:right;">Mean grade</th>
+            <th style="text-align:right;">D1</th>
+            <th style="text-align:right;">D2</th>
+            <th style="text-align:right;">D3</th>
+            <th style="text-align:right;">D4</th>
+            <th style="text-align:right;">D5</th>
+          </tr>
+        </thead>
+        <tbody id="sourceTable"></tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- INSIGHTS -->
+  <section>
+    <h2>Diagnosis</h2>
+    <p class="section-meta">Issues ranked by priority · click rows for context below</p>
+
+    <div class="chart-card" style="padding: 8px 16px;">
+      <table>
+        <thead>
+          <tr>
+            <th style="width: 110px;">Priority</th>
+            <th>Issue</th>
+            <th style="text-align:right; width: 90px;">Domain</th>
+            <th style="text-align:right; width: 90px;">Avg score</th>
+            <th style="text-align:right; width: 110px;">Pts at risk</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><span class="prio crit">Critical</span></td>
+            <td><strong style="font-weight: 500;">Prompt Engineering inconsistency.</strong> Average below the 72% pass line with a 40% floor. Knowledge is there (you've also hit 92%) but execution is unstable.</td>
+            <td class="num" style="text-align:right;">D4 · 20%</td>
+            <td class="num bad" style="text-align:right;">68.9%</td>
+            <td class="num bad" style="text-align:right;">~6.2 pts</td>
+          </tr>
+          <tr>
+            <td><span class="prio high">High</span></td>
+            <td><strong style="font-weight: 500;">Agentic Architecture volatility.</strong> Heaviest-weighted domain (27%) with a 60–88% range. One bad scenario draw on exam day can sink the whole result.</td>
+            <td class="num" style="text-align:right;">D1 · 27%</td>
+            <td class="num warn" style="text-align:right;">79.0%</td>
+            <td class="num warn" style="text-align:right;">~5.7 pts</td>
+          </tr>
+          <tr>
+            <td><span class="prio high">High</span></td>
+            <td><strong style="font-weight: 500;">Claude Code Config weakness exposed.</strong> The 26 Apr Sundog run hit 58% — the lowest D3 score on record. Earlier Tutorialdojo attempts were hiding this gap. Now sitting below the pass line.</td>
+            <td class="num" style="text-align:right;">D3 · 20%</td>
+            <td class="num bad" style="text-align:right;">77.6%</td>
+            <td class="num warn" style="text-align:right;">~4.5 pts</td>
+          </tr>
+          <tr>
+            <td><span class="prio med">Medium</span></td>
+            <td><strong style="font-weight: 500;">Tool Design has no headroom.</strong> Steady at 79% but minimum is 67%. Likely failure mode: picking over-engineered first steps (custom MCP servers, routing classifiers) when the right answer is "improve tool descriptions".</td>
+            <td class="num" style="text-align:right;">D2 · 18%</td>
+            <td class="num warn" style="text-align:right;">79.0%</td>
+            <td class="num warn" style="text-align:right;">~3.8 pts</td>
+          </tr>
+          <tr>
+            <td><span class="prio med">Medium</span></td>
+            <td><strong style="font-weight: 500;">Context Management slipping.</strong> Was your strongest domain at 86.8%; the 26 Apr Sundog run dropped it to 67%. Average now 83.5%. Watch this — don't let it become a third leak.</td>
+            <td class="num" style="text-align:right;">D5 · 15%</td>
+            <td class="num good" style="text-align:right;">83.5%</td>
+            <td class="num" style="text-align:right;">~2.5 pts</td>
+          </tr>
+          <tr>
+            <td><span class="prio low">Low</span></td>
+            <td><strong style="font-weight: 500;">Source-driven score variance.</strong> Tutorialdojo doesn't report Domain 3 on every run, masking weaknesses. Sundog and CertSafari runs are the more honest signal.</td>
+            <td class="num" style="text-align:right;">—</td>
+            <td class="num" style="text-align:right;">—</td>
+            <td class="num" style="text-align:right;">—</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<script>
+  // ---------- DATA ----------
+  const attempts = [
+    { date: '21 Apr', src: 'CertSafari', grade: 65.00, d1: 60, d2: 67, d3: 80, d4: 53, d5: null },
+    { date: '22 Apr (am)', src: 'Tutorialdojo', grade: 71.67, d1: 87, d2: 80, d3: null, d4: 40, d5: 80 },
+    { date: '22 Apr (pm)', src: 'CertSafari', grade: 85.00, d1: 88, d2: 73, d3: 83, d4: 92, d5: 89 },
+    { date: '23 Apr', src: 'Tutorialdojo', grade: 85.00, d1: 87, d2: 87, d3: null, d4: 80, d5: 87 },
+    { date: '24 Apr (am)', src: 'Sundog', grade: 76.67, d1: 81, d2: 82, d3: 67, d4: 75, d5: 78 },
+    { date: '24 Apr (pm)', src: 'Tutorialdojo', grade: 83.33, d1: 75, d2: 82, d3: 100, d4: 67, d5: 100 },
+    { date: '26 Apr', src: 'Sundog', grade: 71.67, d1: 75, d2: 82, d3: 58, d4: 75, d5: 67 }
+  ];
+
+  const domains = [
+    { key: 'd1', name: 'Agentic Architecture & Orchestration', weight: 27, avg: 79.0 },
+    { key: 'd2', name: 'Tool Design & MCP Integration',        weight: 18, avg: 79.0 },
+    { key: 'd3', name: 'Claude Code Configuration & Workflows', weight: 20, avg: 77.6 },
+    { key: 'd4', name: 'Prompt Engineering & Structured Output', weight: 20, avg: 68.9 },
+    { key: 'd5', name: 'Context Management & Reliability',     weight: 15, avg: 83.5 }
+  ];
+
+  // ---------- DOMAIN BARS ----------
+  const domBars = document.getElementById('domainBars');
+  domains.forEach(d => {
+    const cls = d.avg < 72 ? 'bad' : (d.avg < 80 ? 'warn' : 'good');
+    const row = document.createElement('div');
+    row.className = 'dom-row';
+    row.innerHTML = `
+      <div class="head">
+        <div><span class="name">${d.name}</span><span class="weight">${d.weight}% of exam</span></div>
+        <div class="score">${d.avg.toFixed(1)}%</div>
+      </div>
+      <div class="bar-track">
+        <div class="bar-fill ${cls}" style="width: ${d.avg}%;"></div>
+        <div class="bar-target" style="left: 72%;"></div>
+      </div>
+    `;
+    domBars.appendChild(row);
+  });
+
+  // ---------- ATTEMPT TABLE ----------
+  const tbody = document.getElementById('attemptTable');
+  attempts.forEach(a => {
+    const cell = (v) => {
+      if (v === null || v === undefined) return `<td class="num" style="color: var(--ink-3);">—</td>`;
+      const cls = v < 60 ? 'bad' : (v < 75 ? 'warn' : 'good');
+      return `<td class="num ${cls}" style="text-align:right;">${v}%</td>`;
+    };
+    const gradeCls = a.grade < 72 ? 'bad' : (a.grade < 80 ? 'warn' : 'good');
+    tbody.insertAdjacentHTML('beforeend', `
+      <tr>
+        <td>${a.date}</td>
+        <td style="color: var(--ink-2);">${a.src}</td>
+        <td class="num ${gradeCls}" style="text-align:right; font-weight:500;">${a.grade.toFixed(1)}%</td>
+        ${cell(a.d1)}${cell(a.d2)}${cell(a.d3)}${cell(a.d4)}${cell(a.d5)}
+      </tr>
+    `);
+  });
+
+  // ---------- TREND CHART ----------
+  const trendCtx = document.getElementById('trendChart');
+  new Chart(trendCtx, {
+    type: 'line',
+    data: {
+      labels: attempts.map(a => `${a.date}\n${a.src}`),
+      datasets: [
+        {
+          label: 'Grade %',
+          data: attempts.map(a => a.grade),
+          borderColor: '#1a1a1a',
+          backgroundColor: 'rgba(26,26,26,0.06)',
+          borderWidth: 2,
+          pointRadius: 5,
+          pointBackgroundColor: '#1a1a1a',
+          pointHoverRadius: 7,
+          tension: 0.2,
+          fill: true
+        },
+        {
+          label: 'Pass line (72%)',
+          data: attempts.map(() => 72),
+          borderColor: '#a32d2d',
+          borderWidth: 1.5,
+          borderDash: [6, 4],
+          pointRadius: 0,
+          fill: false
+        }
+      ]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+        legend: { display: false },
+        tooltip: {
+          callbacks: {
+            label: (c) => c.datasetIndex === 0 ? `Grade: ${c.raw.toFixed(1)}%` : `Pass: 72%`
+          }
+        }
+      },
+      scales: {
+        y: {
+          min: 50, max: 100,
+          ticks: { callback: v => v + '%', color: '#888880', font: { size: 11 } },
+          grid: { color: 'rgba(0,0,0,0.04)' }
+        },
+        x: {
+          ticks: { color: '#888880', font: { size: 11 }, maxRotation: 0 },
+          grid: { display: false }
+        }
+      }
+    }
+  });
+
+  // ---------- DOMAIN-PER-ATTEMPT GROUPED BAR ----------
+  const palette = {
+    d1: '#3266ad',
+    d2: '#1d9e75',
+    d3: '#ba7517',
+    d4: '#c8553d',
+    d5: '#7f77dd'
+  };
+  const heatCtx = document.getElementById('heatChart');
+  new Chart(heatCtx, {
+    type: 'bar',
+    data: {
+      labels: attempts.map(a => a.date),
+      datasets: domains.map(d => ({
+        label: d.name.split(' ')[0] + (d.key === 'd3' ? ' Code' : d.key === 'd2' ? ' Design' : d.key === 'd4' ? ' Engineering' : d.key === 'd5' ? ' Mgmt' : ''),
+        data: attempts.map(a => a[d.key]),
+        backgroundColor: palette[d.key],
+        borderWidth: 0,
+        borderRadius: 0,
+        barPercentage: 0.85,
+        categoryPercentage: 0.85
+      }))
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+        legend: {
+          position: 'bottom',
+          labels: { boxWidth: 10, boxHeight: 10, padding: 12, color: '#5a5a55', font: { size: 11 }, usePointStyle: false }
+        },
+        tooltip: { callbacks: { label: (c) => `${c.dataset.label}: ${c.raw}%` } }
+      },
+      scales: {
+        y: {
+          min: 0, max: 100,
+          ticks: { callback: v => v + '%', color: '#888880', font: { size: 11 } },
+          grid: { color: 'rgba(0,0,0,0.04)' }
+        },
+        x: {
+          ticks: { color: '#888880', font: { size: 11 } },
+          grid: { display: false }
+        }
+      }
+    }
+  });
+
+  // ---------- POINT LOSS CHART ----------
+  const lossCtx = document.getElementById('lossChart');
+  const lossData = domains.map(d => ({
+    name: d.name,
+    loss: +(((100 - d.avg) * d.weight) / 100 * 100 / 100).toFixed(2) // weighted loss in raw % points
+  })).map(x => ({ name: x.name, loss: +(x.loss).toFixed(2) }));
+  // recompute cleanly
+  const computedLoss = domains.map(d => ({ name: d.name, loss: +((100 - d.avg) * d.weight / 100).toFixed(2) }));
+  computedLoss.sort((a, b) => b.loss - a.loss);
+
+  new Chart(lossCtx, {
+    type: 'bar',
+    data: {
+      labels: computedLoss.map(x => x.name),
+      datasets: [{
+        label: 'Expected lost points',
+        data: computedLoss.map(x => x.loss),
+        backgroundColor: computedLoss.map((_, i) => i === 0 ? '#a32d2d' : i === 1 ? '#ba7517' : '#5a5a55'),
+        borderWidth: 0,
+        barPercentage: 0.6
+      }]
+    },
+    options: {
+      indexAxis: 'y',
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+        legend: { display: false },
+        tooltip: { callbacks: { label: (c) => `~${c.raw} pts of expected loss` } }
+      },
+      scales: {
+        x: {
+          beginAtZero: true,
+          ticks: { color: '#888880', font: { size: 11 }, callback: v => v + ' pts' },
+          grid: { color: 'rgba(0,0,0,0.04)' }
+        },
+        y: {
+          ticks: { color: '#5a5a55', font: { size: 12 } },
+          grid: { display: false }
+        }
+      }
+    }
+  });
+
+  // ---------- BY SOURCE ----------
+  const sourceOrder = ['CertSafari', 'Tutorialdojo', 'Sundog'];
+  const bySource = {};
+  sourceOrder.forEach(s => bySource[s] = attempts.filter(a => a.src === s));
+
+  const sourceAvgs = sourceOrder.map(s => {
+    const runs = bySource[s];
+    const avg = (key) => {
+      const vals = runs.map(r => r[key]).filter(v => v !== null);
+      return vals.length ? vals.reduce((a,b)=>a+b,0) / vals.length : null;
+    };
+    const grade = runs.reduce((a,b)=>a+b.grade,0) / runs.length;
+    return { src: s, n: runs.length, grade, d1: avg('d1'), d2: avg('d2'), d3: avg('d3'), d4: avg('d4'), d5: avg('d5') };
+  });
+
+  // Source-table
+  const stbody = document.getElementById('sourceTable');
+  sourceAvgs.forEach(s => {
+    const cell = (v) => {
+      if (v === null) return `<td class="num" style="color: var(--ink-3); text-align:right;">—</td>`;
+      const cls = v < 72 ? 'bad' : (v < 80 ? 'warn' : 'good');
+      return `<td class="num ${cls}" style="text-align:right;">${v.toFixed(0)}%</td>`;
+    };
+    const gCls = s.grade < 72 ? 'bad' : (s.grade < 80 ? 'warn' : 'good');
+    stbody.insertAdjacentHTML('beforeend', `
+      <tr>
+        <td><strong style="font-weight:500;">${s.src}</strong></td>
+        <td class="num" style="text-align:right; color: var(--ink-2);">${s.n}</td>
+        <td class="num ${gCls}" style="text-align:right; font-weight:500;">${s.grade.toFixed(1)}%</td>
+        ${cell(s.d1)}${cell(s.d2)}${cell(s.d3)}${cell(s.d4)}${cell(s.d5)}
+      </tr>
+    `);
+  });
+
+  // Source chart — grouped bars by domain, colored by source
+  const sourceColors = { CertSafari: '#3266ad', Tutorialdojo: '#1d9e75', Sundog: '#c8553d' };
+  const srcCtx = document.getElementById('sourceChart');
+  new Chart(srcCtx, {
+    type: 'bar',
+    data: {
+      labels: ['Overall', 'D1 Agentic', 'D2 Tool/MCP', 'D3 Claude Code', 'D4 Prompt', 'D5 Context'],
+      datasets: sourceAvgs.map(s => ({
+        label: `${s.src} (n=${s.n})`,
+        data: [s.grade, s.d1, s.d2, s.d3, s.d4, s.d5],
+        backgroundColor: sourceColors[s.src],
+        borderWidth: 0,
+        barPercentage: 0.85,
+        categoryPercentage: 0.78
+      }))
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+        legend: {
+          position: 'bottom',
+          labels: { boxWidth: 10, boxHeight: 10, padding: 14, color: '#5a5a55', font: { size: 12 } }
+        },
+        tooltip: {
+          callbacks: {
+            label: (c) => c.raw === null ? `${c.dataset.label}: no data` : `${c.dataset.label}: ${c.raw.toFixed(1)}%`
+          }
+        }
+      },
+      scales: {
+        y: {
+          min: 0, max: 100,
+          ticks: { callback: v => v + '%', color: '#888880', font: { size: 11 } },
+          grid: { color: 'rgba(0,0,0,0.04)' }
+        },
+        x: {
+          ticks: { color: '#5a5a55', font: { size: 11 } },
+          grid: { display: false }
+        }
+      }
+    }
+  });
+</script>
+</body>
+</html>
